@@ -1,1 +1,1 @@
-Docker homework: Django, PostgreSQL, Nginx.Ф
+Docker homework: Django, PostgreSQL, Nginx
