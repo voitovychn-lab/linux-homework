@@ -1,44 +1,20 @@
-# Налаштування AWS
+
 provider "aws" {
   region = "us-west-2"
 }
 
-# Модуль S3 та DynamoDB
-module "s3_backend" {
-  source = "./modules/s3-backend"
+# Використання VPC з домашнього завдання №5
+data "terraform_remote_state" "lesson5" {
+  backend = "s3"
 
-  bucket_name = "nazar-voitovych-terraform-state-lesson-5"
-  table_name  = "terraform-locks"
+  config = {
+    bucket = "nazar-voitovych-terraform-state-lesson-5"
+    key    = "lesson-5/terraform.tfstate"
+    region = "us-west-2"
+  }
 }
 
-# Модуль VPC
-module "vpc" {
-  source = "./modules/vpc"
-
-  vpc_cidr_block = "10.0.0.0/16"
-
-  public_subnets = [
-    "10.0.1.0/24",
-    "10.0.2.0/24",
-    "10.0.3.0/24"
-  ]
-
-  private_subnets = [
-    "10.0.4.0/24",
-    "10.0.5.0/24",
-    "10.0.6.0/24"
-  ]
-
-  availability_zones = [
-    "us-west-2a",
-    "us-west-2b",
-    "us-west-2c"
-  ]
-
-  vpc_name = "lesson-5-vpc"
-}
-
-# Модуль ECR
+# Репозиторій Docker-образів
 module "ecr" {
   source = "./modules/ecr"
 
@@ -46,11 +22,12 @@ module "ecr" {
   scan_on_push = true
 }
 
-
-# Модуль EKS (Kubernetes)
+# Kubernetes EKS
 module "eks" {
   source = "./modules/eks"
 
   cluster_name = "lesson-7-eks"
-  subnet_ids   = module.vpc.private_subnets
+
+  # Використовуємо приватні підмережі з ДЗ №5
+  subnet_ids = data.terraform_remote_state.lesson5.outputs.private_subnets
 }

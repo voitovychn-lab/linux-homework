@@ -1,63 +1,29 @@
-output "s3_bucket_name" {
-  description = "Назва S3-бакета для стейтів"
-  value       = module.s3_backend.s3_bucket_name
-}
-
-output "s3_bucket_url" {
-  description = "URL S3-бакета для стейтів"
-  value       = module.s3_backend.s3_bucket_url
-}
-
-output "dynamodb_table_name" {
-  description = "Назва таблиці DynamoDB для блокування стейтів"
-  value       = module.s3_backend.dynamodb_table_name
-}
-
-output "vpc_id" {
-  description = "ID створеної VPC"
-  value       = module.vpc.vpc_id
-}
-
-output "public_subnets" {
-  description = "ID публічних підмереж"
-  value       = module.vpc.public_subnets
-}
-
-output "private_subnets" {
-  description = "ID приватних підмереж"
-  value       = module.vpc.private_subnets
-}
-
-output "internet_gateway_id" {
-  description = "ID Internet Gateway"
-  value       = module.vpc.internet_gateway_id
-}
-
-output "nat_gateway_id" {
-  description = "ID NAT Gateway"
-  value       = module.vpc.nat_gateway_id
-}
-
+# ECR — адреса Docker-репозиторію
 output "ecr_repository_url" {
-  description = "URL репозиторію ECR"
+  description = "URL репозиторію Django в ECR"
   value       = module.ecr.repository_url
 }
 
-
-# Назва Kubernetes кластера
+# EKS — назва Kubernetes-кластера
 output "eks_cluster_name" {
   description = "Назва EKS кластера"
   value       = module.eks.cluster_name
 }
 
-# Адреса Kubernetes API
+# EKS — адреса Kubernetes API
 output "eks_cluster_endpoint" {
   description = "Endpoint EKS кластера"
   value       = module.eks.cluster_endpoint
 }
 
-# Назва групи робочих вузлів
+# EKS — група робочих вузлів
 output "eks_node_group_name" {
   description = "Назва Node Group"
   value       = module.eks.node_group_name
+}
+
+# VPC — ID підмереж із ДЗ №5
+output "private_subnets" {
+  description = "Приватні підмережі з попереднього завдання"
+  value       = data.terraform_remote_state.lesson5.outputs.private_subnets
 }

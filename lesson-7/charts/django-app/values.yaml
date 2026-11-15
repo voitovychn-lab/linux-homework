@@ -1,7 +1,7 @@
 
 # Docker-образ Django
 image:
-  repository: ""
+  repository: "482716395028.dkr.ecr.us-west-2.amazonaws.com/lesson-7-ecr"
   tag: "latest"
   pullPolicy: IfNotPresent
 
