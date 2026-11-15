@@ -1,0 +1,63 @@
+output "s3_bucket_name" {
+  description = "Назва S3-бакета для стейтів"
+  value       = module.s3_backend.s3_bucket_name
+}
+
+output "s3_bucket_url" {
+  description = "URL S3-бакета для стейтів"
+  value       = module.s3_backend.s3_bucket_url
+}
+
+output "dynamodb_table_name" {
+  description = "Назва таблиці DynamoDB для блокування стейтів"
+  value       = module.s3_backend.dynamodb_table_name
+}
+
+output "vpc_id" {
+  description = "ID створеної VPC"
+  value       = module.vpc.vpc_id
+}
+
+output "public_subnets" {
+  description = "ID публічних підмереж"
+  value       = module.vpc.public_subnets
+}
+
+output "private_subnets" {
+  description = "ID приватних підмереж"
+  value       = module.vpc.private_subnets
+}
+
+output "internet_gateway_id" {
+  description = "ID Internet Gateway"
+  value       = module.vpc.internet_gateway_id
+}
+
+output "nat_gateway_id" {
+  description = "ID NAT Gateway"
+  value       = module.vpc.nat_gateway_id
+}
+
+output "ecr_repository_url" {
+  description = "URL репозиторію ECR"
+  value       = module.ecr.repository_url
+}
+
+
+# Назва Kubernetes кластера
+output "eks_cluster_name" {
+  description = "Назва EKS кластера"
+  value       = module.eks.cluster_name
+}
+
+# Адреса Kubernetes API
+output "eks_cluster_endpoint" {
+  description = "Endpoint EKS кластера"
+  value       = module.eks.cluster_endpoint
+}
+
+# Назва групи робочих вузлів
+output "eks_node_group_name" {
+  description = "Назва Node Group"
+  value       = module.eks.node_group_name
+}

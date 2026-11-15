@@ -1,0 +1,42 @@
+
+# Docker-образ Django
+image:
+  repository: ""
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Кількість подів до налаштування HPA
+replicaCount: 2
+
+# Налаштування сервісу
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8000
+
+# Автоматичне масштабування
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+# Ресурси контейнера
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Змінні середовища Django
+config:
+  POSTGRES_HOST: ""
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "django_db"
+  POSTGRES_USER: "django_user"
+
+# Ingress не використовуємо
+ingress:
+  enabled: false
