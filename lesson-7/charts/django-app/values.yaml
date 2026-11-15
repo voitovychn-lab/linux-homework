@@ -32,11 +32,15 @@ resources:
 
 # Змінні середовища Django
 config:
-  POSTGRES_HOST: ""
+  POSTGRES_HOST: "postgresql.default.svc.cluster.local"
   POSTGRES_PORT: "5432"
   POSTGRES_DB: "django_db"
   POSTGRES_USER: "django_user"
+  DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,.elb.amazonaws.com"
 
 # Ingress не використовуємо
 ingress:
   enabled: false
+
+postgres:
+  password: "django_pass_2026"
