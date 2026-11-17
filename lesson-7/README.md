@@ -298,3 +298,68 @@ https://github.com/voitovychn-lab/linux-homework
 Налаштовано GitOps-підхід для автоматичного оновлення Django-застосунку через Argo CD.
 
 Перевірки Terraform і Helm завершилися успішно. Проєкт містить необхідні конфігураційні файли для автоматизації CI/CD.
+
+
+## Перевірка Jenkins Job
+
+1. Перевірити роботу Jenkins:
+
+   kubectl get pods -n jenkins
+
+2. Відкрити інтерфейс Jenkins:
+
+   kubectl port-forward svc/jenkins 8080:8080 -n jenkins
+
+3. Перейти в браузері на http://localhost:8080.
+4. Увійти в Jenkins та відкрити налаштований Pipeline Job.
+5. Натиснути Build Now.
+6. Відкрити Console Output і перевірити етапи Checkout, Build and Push Docker Image та Update Helm Values.
+7. Перевірити новий Docker-образ в Amazon ECR та оновлений image.tag у GitHub.
+
+## Перевірка результату в Argo CD
+
+1. Перевірити роботу Argo CD:
+
+   kubectl get pods -n argocd
+
+2. Відкрити інтерфейс Argo CD:
+
+   kubectl port-forward svc/argocd-server 8081:80 -n argocd
+
+3. Перейти в браузері на http://localhost:8081.
+4. Увійти в Argo CD та відкрити Application django-app.
+5. Перевірити статуси Synced та Healthy.
+6. Переглянути Kubernetes-ресурси Django.
+7. Після оновлення image.tag у GitHub перевірити автоматичну синхронізацію застосунку.
+
+## Перевірка Jenkins Job
+
+1. Перевірити роботу Jenkins:
+
+   kubectl get pods -n jenkins
+
+2. Відкрити інтерфейс Jenkins:
+
+   kubectl port-forward svc/jenkins 8080:8080 -n jenkins
+
+3. Перейти в браузері на http://localhost:8080.
+4. Увійти в Jenkins та відкрити налаштований Pipeline Job.
+5. Натиснути Build Now.
+6. Відкрити Console Output і перевірити етапи Checkout, Build and Push Docker Image та Update Helm Values.
+7. Перевірити новий Docker-образ в Amazon ECR та оновлений image.tag у GitHub.
+
+## Перевірка результату в Argo CD
+
+1. Перевірити роботу Argo CD:
+
+   kubectl get pods -n argocd
+
+2. Відкрити інтерфейс Argo CD:
+
+   kubectl port-forward svc/argocd-server 8081:80 -n argocd
+
+3. Перейти в браузері на http://localhost:8081.
+4. Увійти в Argo CD та відкрити Application django-app.
+5. Перевірити статуси Synced та Healthy.
+6. Переглянути Kubernetes-ресурси Django.
+7. Після оновлення image.tag у GitHub перевірити автоматичну синхронізацію застосунку.
