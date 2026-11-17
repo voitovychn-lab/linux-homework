@@ -1,0 +1,90 @@
+
+pipeline {
+    agent {
+        kubernetes {
+            yaml '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:debug
+      command: ["/busybox/cat"]
+      tty: true
+    - name: git
+      image: alpine/git:latest
+      command: ["cat"]
+      tty: true
+'''
+        }
+    }
+
+    environment {
+        AWS_REGION = 'us-west-2'
+        AWS_ACCOUNT_ID = '482716395028'
+        ECR_REPOSITORY = 'lesson-7-ecr'
+        GITOPS_REPO_URL = 'https://github.com/voitovychn-lab/linux-homework.git'
+        GITOPS_BRANCH = 'main'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build and Push Docker Image') {
+            steps {
+                container('kaniko') {
+                    sh '''
+                        /kaniko/executor \
+                          --context="${WORKSPACE}/docker/django" \
+                          --dockerfile="${WORKSPACE}/docker/django/Dockerfile" \
+                          --destination="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${BUILD_NUMBER}"
+                    '''
+                }
+            }
+        }
+
+        stage('Update Helm Values') {
+            steps {
+                container('git') {
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'github-gitops',
+                            usernameVariable: 'GIT_USER',
+                            passwordVariable: 'GIT_TOKEN'
+                        )
+                    ]) {
+                        sh '''
+                            set -e
+
+                            git clone --branch "$GITOPS_BRANCH" \
+                              "$GITOPS_REPO_URL" gitops
+
+                            cd gitops
+
+                            sed -i "s|^  tag:.*|  tag: \\"${BUILD_NUMBER}\\"|" \
+                              charts/django-app/values.yaml
+
+                            git config user.email "jenkins@example.com"
+                            git config user.name "Jenkins CI"
+
+                            git add charts/django-app/values.yaml
+
+                            if ! git diff --cached --quiet; then
+                                git commit -m "Update Django image to ${BUILD_NUMBER}"
+
+                                AUTH=$(printf '%s:%s' "$GIT_USER" "$GIT_TOKEN" | base64 | tr -d '\\n')
+
+                                git -c http.extraHeader="Authorization: Basic $AUTH" \
+                                  push origin "$GITOPS_BRANCH"
+                            fi
+                        '''
+                    }
+                }
+            }
+        }
+    }
+}

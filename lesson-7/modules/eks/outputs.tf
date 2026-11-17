@@ -22,3 +22,12 @@ output "node_group_name" {
   description = "Назва Node Group"
   value       = aws_eks_node_group.main.node_group_name
 }
+# ARN OIDC провайдера
+output "oidc_provider_arn" {
+  value = aws_iam_openid_connect_provider.oidc.arn
+}
+
+# URL OIDC провайдера
+output "oidc_provider_url" {
+  value = aws_eks_cluster.main.identity[0].oidc[0].issuer
+}

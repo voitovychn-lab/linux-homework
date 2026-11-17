@@ -31,3 +31,33 @@ module "eks" {
   # Використовуємо приватні підмережі з ДЗ №5
   subnet_ids = data.terraform_remote_state.lesson5.outputs.private_subnets
 }
+# Jenkins
+module "jenkins" {
+  source = "./modules/jenkins"
+
+  cluster_name      = module.eks.cluster_name
+  oidc_provider_arn = module.eks.oidc_provider_arn
+  oidc_provider_url = module.eks.oidc_provider_url
+}
+data "aws_eks_cluster_auth" "main" {
+  name = module.eks.cluster_name
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority)
+    token                  = data.aws_eks_cluster_auth.main.token
+  }
+}
+# Argo CD
+module "argo_cd" {
+  source = "./modules/argo_cd"
+
+  git_repo_url = "https://github.com/voitovychn-lab/linux-homework.git"
+}
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority)
+  token                  = data.aws_eks_cluster_auth.main.token
+}
