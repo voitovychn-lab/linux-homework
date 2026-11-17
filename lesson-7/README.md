@@ -1,75 +1,197 @@
-# Домашнє завдання №7 — Вивчення Helm
+# Домашнє завдання №7–9 — Helm, Jenkins CI та Argo CD
 
-Войтович Назар
+**Войтович Назар**
 
-У цьому проєкті описано інфраструктуру AWS за допомогою Terraform та налаштовано Helm-чарт для Django-застосунку в Kubernetes.
+У цьому проєкті описано інфраструктуру AWS за допомогою Terraform, налаштовано Helm-чарт для Django-застосунку в Kubernetes та реалізовано процес CI/CD із використанням Jenkins і Argo CD.
 
-Для роботи використано модулі з попереднього завдання та додано модуль EKS.
+Для роботи використано модулі з попередніх домашніх завдань, додано модулі Jenkins та Argo CD.
 
-Регіон AWS - us-west-2.
+Регіон AWS — `us-west-2`.
 
 ## Структура проєкту
 
-- main.tf - підключення модулів і налаштування AWS.
-- backend.tf - налаштування збереження стейту в S3.
-- outputs.tf - виведення результатів.
-- modules/s3-backend - S3-бакет і таблиця DynamoDB.
-- modules/vpc - мережа, підмережі, шлюзи та маршрути.
-- modules/ecr - репозиторій для Docker-образів.
-- modules/eks - кластер Kubernetes та робочі вузли.
-- charts/django-app - Helm-чарт для Django.
+- `main.tf` — підключення модулів і налаштування провайдерів AWS, Helm та Kubernetes.
+- `backend.tf` — налаштування збереження Terraform state в S3.
+- `outputs.tf` — виведення результатів Terraform.
+- `modules/s3-backend` — S3-бакет і таблиця DynamoDB.
+- `modules/vpc` — мережа, підмережі, шлюзи та маршрути.
+- `modules/ecr` — репозиторій Docker-образів.
+- `modules/eks` — Kubernetes-кластер EKS, робочі вузли та OIDC-провайдер.
+- `modules/jenkins` — встановлення Jenkins через Helm.
+- `modules/argo_cd` — встановлення Argo CD та опис GitOps Application.
+- `charts/django-app` — Helm-чарт Django та PostgreSQL.
+- `docker/django` — Dockerfile і файли Django-застосунку.
+- `Jenkinsfile` — опис CI/CD Pipeline для Jenkins.
 
 ## Опис модулів
 
 ### vpc
 
-Створює VPC із трьома публічними та трьома приватними підмережами. Налаштовано Internet Gateway, NAT Gateway та таблиці маршрутизації.
+Створює VPC із трьома публічними та трьома приватними підмережами.
+
+Налаштовано Internet Gateway, NAT Gateway та таблиці маршрутизації.
+
+Мережева інфраструктура використовується з попереднього домашнього завдання через Terraform Remote State.
 
 ### eks
 
-Створює кластер Kubernetes в AWS EKS.
+Створює Kubernetes-кластер в AWS EKS.
 
-Для робочих вузлів використано EC2 t3.medium. Налаштовано групу вузлів із двома екземплярами та можливістю масштабування до трьох.
+Для робочих вузлів використано EC2 `t3.medium`.
+
+Налаштовано групу вузлів із двома екземплярами та можливістю масштабування до трьох.
+
+Додано OIDC-провайдер для інтеграції Kubernetes із AWS IAM.
 
 ### ecr
 
-Створює репозиторій lesson-7-ecr для Docker-образів Django. Увімкнено сканування образів під час завантаження.
+Створює репозиторій `lesson-7-ecr` для Docker-образів Django.
+
+Увімкнено сканування образів під час завантаження.
 
 ### s3-backend
 
-Налаштовує S3-бакет і таблицю DynamoDB для збереження та блокування стейту Terraform.
+Налаштовує S3-бакет і таблицю DynamoDB для збереження та блокування Terraform state.
 
-## Helm-чарт
+### jenkins
 
-У папці charts/django-app створено Helm-чарт, який містить:
+Модуль `modules/jenkins` містить Terraform-конфігурацію для встановлення Jenkins у Kubernetes через Helm.
 
-- Deployment - запуск Django-застосунку.
-- Service - доступ через LoadBalancer.
-- ConfigMap - змінні середовища Django.
-- HPA - автоматичне масштабування від 2 до 6 подів при навантаженні CPU 70%.
-- values.yaml - основні налаштування застосунку.
+Основні налаштування:
 
-## Підготовка
+- Helm-чарт Jenkins версії `5.8.27`.
+- Окремий namespace `jenkins`.
+- Сервіс типу `ClusterIP`.
+- Постійне сховище розміром 10 GiB.
+- Kubernetes Plugin для запуску агентів.
+- Git Plugin для роботи з репозиторіями.
+- Pipeline та інші необхідні плагіни.
 
-Для роботи потрібні Terraform, AWS CLI, Docker, kubectl та Helm.
+Jenkins використовується для автоматизації збірки Docker-образів і оновлення Helm-конфігурації.
 
-Необхідно налаштувати доступ до AWS, підготувати S3-бакет і таблицю DynamoDB для backend.
+### argo_cd
 
-Команди Terraform виконуються з папки lesson-7.
+Модуль `modules/argo_cd` містить Terraform-конфігурацію для встановлення Argo CD через Helm.
+
+Argo CD використовується для автоматичного розгортання Django-застосунку в Kubernetes за GitOps-підходом.
+
+Налаштовано:
+
+- Namespace `argocd`.
+- Helm-чарт `argo-cd`.
+- Kubernetes Application `django-app`.
+- Відстеження Helm-чарту в Git-репозиторії.
+- Автоматичну синхронізацію.
+- `prune: true` — видалення ресурсів, прибраних із Git.
+- `selfHeal: true` — відновлення стану відповідно до Git.
+
+## Helm-чарт Django
+
+У папці `charts/django-app` створено Helm-чарт, який містить:
+
+- **Deployment** — запуск Django-застосунку.
+- **Service** — доступ через LoadBalancer.
+- **ConfigMap** — змінні середовища Django.
+- **Secret** — параметри підключення до бази даних.
+- **StatefulSet** — запуск PostgreSQL.
+- **HPA** — автоматичне масштабування від 2 до 6 подів при навантаженні CPU 70%.
+- **values.yaml** — основні налаштування застосунку.
+
+Docker-образ Django зберігається в Amazon ECR.
+
+## Jenkins CI Pipeline
+
+У кореневій папці `lesson-7` створено `Jenkinsfile`.
+
+Pipeline описує такі етапи:
+
+### 1. Checkout
+
+Jenkins отримує вихідний код Django-застосунку з Git-репозиторію.
+
+### 2. Build and Push Docker Image
+
+Для створення Docker-образу використовується Kaniko в Kubernetes Agent.
+
+Образ збирається з Dockerfile, що знаходиться в папці `docker/django`.
+
+Тег Docker-образу формується на основі номера збірки Jenkins (`BUILD_NUMBER`).
+
+Після збірки образ має бути опублікований в Amazon ECR.
+
+### 3. Update Helm Values
+
+Jenkins клонує GitOps-репозиторій та оновлює параметр `image.tag` у файлі:
+
+`charts/django-app/values.yaml`
+
+Після оновлення Jenkins створює Git-коміт і надсилає зміни до гілки `main`.
+
+Для автентифікації GitHub передбачено Jenkins Credentials з ідентифікатором `github-gitops`.
+
+## Argo CD та GitOps
+
+Argo CD відстежує Git-репозиторій із Helm-чартом Django.
+
+Після зміни тегу Docker-образу в `values.yaml` Argo CD синхронізує Kubernetes-ресурси з конфігурацією Git.
+
+Послідовність CI/CD:
+
+1. Зміни вихідного коду надходять у GitHub.
+2. Jenkins запускає Pipeline.
+3. Kaniko збирає Docker-образ.
+4. Образ публікується в Amazon ECR.
+5. Jenkins оновлює тег образу в Helm values.yaml.
+6. Jenkins надсилає зміни до GitOps-репозиторію.
+7. Argo CD виявляє зміни та синхронізує Kubernetes.
+8. Django-застосунок отримує оновлену версію Docker-образу.
+
+## Підготовка середовища
+
+Для роботи потрібні:
+
+- Terraform.
+- AWS CLI.
+- Docker.
+- kubectl.
+- Helm.
+- Git.
+- Доступ до AWS.
+- GitHub-репозиторій.
+
+Необхідно налаштувати AWS Credentials, підготувати S3 Backend і доступ до Kubernetes.
+
+Команди Terraform виконуються з папки `lesson-7`.
 
 ## Запуск Terraform
 
-Ініціалізація та перевірка:
+Ініціалізація:
 
 ```bash
 terraform init
+```
+
+Перевірка форматування:
+
+```bash
+terraform fmt -check -recursive
+```
+
+Перевірка конфігурації:
+
+```bash
 terraform validate
 ```
 
-Перегляд змін та створення ресурсів:
+Перегляд змін:
 
 ```bash
 terraform plan
+```
+
+Створення ресурсів:
+
+```bash
 terraform apply
 ```
 
@@ -81,15 +203,13 @@ aws eks update-kubeconfig --region us-west-2 --name lesson-7-eks
 
 ## Запуск Helm
 
-Спочатку потрібно зібрати Docker-образ Django та завантажити його до ECR. Також необхідно налаштувати підключення до PostgreSQL.
-
-З папки lesson-7 отримати адресу ECR:
+Отримати адресу ECR:
 
 ```bash
 terraform output -raw ecr_repository_url
 ```
 
-Встановити Helm-чарт, підставивши отриману адресу ECR та адресу PostgreSQL:
+Встановити Helm-чарт Django:
 
 ```bash
 helm install my-django ./charts/django-app \
@@ -97,7 +217,7 @@ helm install my-django ./charts/django-app \
   --set config.POSTGRES_HOST=АДРЕСА_POSTGRESQL
 ```
 
-Перевірка ресурсів Kubernetes:
+Перевірити Kubernetes-ресурси:
 
 ```bash
 kubectl get pods
@@ -105,25 +225,76 @@ kubectl get svc
 kubectl get hpa
 ```
 
-## Перевірка
-
-Перевірено форматування та конфігурацію Terraform:
+Перевірити встановлення Jenkins та Argo CD:
 
 ```bash
-terraform fmt -recursive -check
+kubectl get pods -n jenkins
+kubectl get pods -n argocd
+```
+
+## Перевірка
+
+### Terraform
+
+Успішно виконано команди:
+
+```bash
+terraform fmt -recursive
+terraform fmt -check -recursive
 terraform init -backend=false
 terraform validate
 ```
 
-Перевірено Helm-чарт:
+Результат перевірки:
 
-```bash
-helm lint ./charts/django-app --set image.repository=example.com/lesson-7-ecr
-helm template my-django ./charts/django-app --set image.repository=example.com/lesson-7-ecr
+```text
+Success! The configuration is valid.
 ```
 
-Перевірки завершилися успішно.
+### Helm
+
+Виконано:
+
+```bash
+helm lint ./charts/django-app
+```
+
+Результат:
+
+```text
+1 chart(s) linted, 0 chart(s) failed
+```
+
+Також виконано:
+
+```bash
+helm template django-app ./charts/django-app
+```
+
+Шаблони Kubernetes-ресурсів успішно згенеровано.
+
+### CI/CD
+
+Підготовлено конфігурацію Jenkins Pipeline та Argo CD для автоматизації збірки, публікації Docker-образів і розгортання Django-застосунку.
+
+Налаштування передбачають інтеграцію GitHub, Jenkins, Amazon ECR та Kubernetes через GitOps.
+
+## GitHub
+
+Репозиторій:
+
+https://github.com/voitovychn-lab/linux-homework
+
+Гілка домашнього завдання:
+
+`lesson-8-9`
 
 ## Висновок
 
-У ході виконання домашнього завдання підготовлено Terraform-конфігурацію для AWS EKS та ECR, а також Helm-чарт для Django-застосунку. Налаштовано Kubernetes Deployment, Service, ConfigMap і HPA для автоматичного масштабування.
+У ході виконання домашніх завдань №7–9 підготовлено Terraform-конфігурацію для AWS EKS та ECR, створено Helm-чарт Django-застосунку та додано модулі Jenkins і Argo CD.
+
+Реалізовано опис CI/CD Pipeline із використанням Kubernetes Agent, Kaniko та GitHub.
+
+Налаштовано GitOps-підхід для автоматичного оновлення Django-застосунку через Argo CD.
+
+Перевірки Terraform і Helm завершилися успішно. Проєкт містить необхідні конфігураційні файли для автоматизації CI/CD.
